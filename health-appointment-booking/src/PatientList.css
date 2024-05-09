@@ -1,0 +1,81 @@
+/* Container for patient list */
+.patient-list-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  /* Flexbox layout for patient cards */
+  .patient-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* Adjust the gap between patient cards */
+  }
+  
+  /* Styling for each patient card */
+  .patient-card {
+    flex: 1;
+    width: 200px; /* Set a fixed width for each card */
+    height: 200px; /* Set a fixed height for each card */
+    border: 1px solid #ddd; /* Lighter border color for a softer look */
+    border-radius: 8px; /* Slightly rounded corners */
+    padding: 15px; /* Increased padding for better spacing */
+    background-color: #fff; /* White background */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle box shadow for depth */
+    transition: all 0.3s ease; /* Smooth transition for hover effect */
+  }
+  
+  /* Hover effect for patient cards */
+  .patient-card:hover {
+    transform: translateY(-5px); /* Lift the card on hover for a subtle effect */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow on hover */
+  }
+  
+  /* Styling for text within patient cards */
+  .patient-card p {
+    margin: 5px 0;
+    font-size: 16px; /* Increased font size for better readability */
+    color: #333; /* Darker text color for better contrast */
+  }
+  
+  /* Styling for patient name */
+  .patient-card p:first-child {
+    font-weight: bold; /* Bold font weight for patient name */
+  }
+  
+  /* Aligning the last paragraph to the bottom */
+  .patient-card p:last-child {
+    margin-top: auto; /* Push the last paragraph to the bottom for vertical alignment */
+  }
+  
+  /* Animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Apply fade-in animation to patient cards */
+  .patient-card {
+    animation: fadeIn 0.5s ease-out;
+  }
+  .search-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .search-input:focus {
+    outline: none;
+    border-color: #007bff; /* Change border color on focus */
+  }
+  
+  
