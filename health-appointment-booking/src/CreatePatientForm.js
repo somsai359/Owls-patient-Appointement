@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './CreatePatientForm.css'; // Import CSS file for styling
 
 function CreatePatientForm() {
   const [formData, setFormData] = useState({
-    
     name: '',
     email: '',
     phone: ''
   });
+  const [successMessage, setSuccessMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prevFormData) => ({
+      ...prevFormData,
       [name]: value
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -29,51 +32,67 @@ function CreatePatientForm() {
       if (!response.ok) {
         throw new Error('Failed to create patient');
       }
-      // Optionally, you can redirect to the patient detail page after successful creation
-      const data = await response.json();
-      // Navigate to the patient detail page
-      window.location.href = `/patients/${data.id}/detail`;
+      // Redirect to the patients list page after successful patient creation
+      navigate(`/patients`); // Change the destination path here
+      setSuccessMessage('Patient created successfully!');
     } catch (error) {
       console.error('Error creating patient:', error.message);
     }
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSuccessMessage('');
+    }, 3000); // Auto-dismiss after 3 seconds
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+
   return (
-    <div>
-      <h2>Create New Patient</h2>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Name:
-          <input 
-            type="text" 
-            name="name" 
-            value={formData.name} 
-            onChange={handleChange} 
-            required 
-          />
-        </label>
-        <label>
-          Email:
-          <input 
-            type="email" 
-            name="email" 
-            value={formData.email} 
-            onChange={handleChange} 
-            required 
-          />
-        </label>
-        <label>
-          Phone:
-          <input 
-            type="tel" 
-            name="phone" 
-            value={formData.phone} 
-            onChange={handleChange} 
-            required 
-          />
-        </label>
-        <button type="submit">Create Patient</button>
-      </form>
+    <div className="create-patient-form-container">
+      <div className="form-box">
+        <h2>Welcome to Hospital Appointment Booking</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="name">Name:</label>
+            <input 
+              type="text" 
+              id="name" 
+              name="name" 
+              value={formData.name} 
+              onChange={handleChange} 
+              required 
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="email">Email:</label>
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              value={formData.email} 
+              onChange={handleChange} 
+              required 
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="phone">Phone:</label>
+            <input 
+              type="tel" 
+              id="phone" 
+              name="phone" 
+              value={formData.phone} 
+              onChange={handleChange} 
+              required 
+            />
+          </div>
+          <button type="submit">Create Patient</button>
+        </form>
+      </div>
+      {successMessage && (
+        <div className="success-dialogue">
+          <p>{successMessage}</p>
+        </div>
+      )}
     </div>
   );
 }
