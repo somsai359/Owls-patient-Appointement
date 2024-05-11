@@ -2,31 +2,31 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 from bson import ObjectId
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
-from typing import List
-import stripe  # Import the Stripe module
+from uuid import uuid4
+import stripe
 
 stripe.api_key = "sk_test_51PEFQnSD3lsheG7Rz75tYsjQ5D1z9uANpnx3EOMMRohSG7xTBbGfJPtCpoEAJh02S7hz7nyOuSjk89ez3kDUSwIB00ArgZKkSe"
+
 # MongoDB connection
 client = MongoClient("mongodb+srv://root:root@cluster0.cjrjjex.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-db = client.get_database("Data")  # Replace "your_database_name" with your actual database name
+db = client.get_database("Data")
 patient_collection = db.get_collection("patients")
 
 app = FastAPI()
 
-# Allow CORS for frontend development
+# Add middleware for CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],  # Add your frontend URL here
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Specify allowed HTTP methods
     allow_headers=["*"],
 )
 
-# Define models for patient
 class Patient(BaseModel):
-    id: str
+    id: str = Field(default_factory=lambda: str(ObjectId()), alias="_id")
     name: str
     email: str
     phone: str
@@ -35,9 +35,19 @@ class Patient(BaseModel):
 @app.post("/patients/", response_model=Patient)
 async def create_patient(patient: Patient):
     patient_dict = patient.dict()
+    # Insert the patient into the database
     result = patient_collection.insert_one(patient_dict)
-    patient.id = str(result.inserted_id)
-    return patient
+    
+    # Retrieve the inserted patient from the database to get the generated ID
+    inserted_id = result.inserted_id
+    inserted_patient = patient_collection.find_one({"_id": inserted_id})
+    
+    if inserted_patient:
+        # Update the patient's id field with the generated _id from MongoDB
+        inserted_patient["_id"] = str(inserted_id)
+        return inserted_patient
+    else:
+        raise HTTPException(status_code=500, detail="Failed to create patient")
 
 # Get all patients
 @app.get("/patients/", response_model=List[Patient])
@@ -53,62 +63,72 @@ async def get_patients():
         patients.append(patient_obj)
     return patients
 
-# Get a single patient by ID with linked appointments
-@app.get("/patients/{patient_id}/detail", response_model=Patient)
-async def get_patient_detail(patient_id: str):
-    patient = patient_collection.find_one({"_id": ObjectId(patient_id)})
-    if patient:
-        patient_obj = Patient(**patient)
-        # Retrieve linked appointments for the patient
-        patient_appointments_cursor = patient_collection.find({"_id": ObjectId(patient_id)}, {"appointments": 1})
-        appointments = [Appointment(**app) for app in patient_appointments_cursor[0].get("appointments", [])]
-        patient_obj.appointments = appointments
-        return patient_obj
-    raise HTTPException(status_code=404, detail="Patient not found")
-
-
-
-@app.get("/patients/search/", response_model=List[Patient])
-async def search_patients(name: str):
-    patients = []
-    # Perform case-insensitive search by name
-    cursor = patient_collection.find({"name": {"$regex": name, "$options": "i"}})
-    for patient in cursor:
-        patient_obj = Patient(
-            id=str(patient['_id']),
-            name=patient['name'],
-            email=patient['email'],
-            phone=patient['phone']
-        )
-        patients.append(patient_obj)
-    return patients
-# Modify the Patient model to include appointments
-class Appointment(BaseModel):
-    id: str
-    datetime: str  # Modify this field as needed
-    details: str
-
-class Patient(BaseModel):
+# Define a response model for the patient detail
+class PatientDetail(BaseModel):
     id: str
     name: str
     email: str
     phone: str
-    appointments: Optional[List[Appointment]] = []
 
-# Create an endpoint to create appointments for a patient
-@app.post("/patients/{patient_id}/appointments/", response_model=Patient)
-async def create_appointment(patient_id: str, appointment: Appointment):
-    # Find the patient by ID
-    patient = patient_collection.find_one({"_id": ObjectId(patient_id)})
+# Endpoint to retrieve patient detail by ID
+@app.get("/patients/{patient_id}/detail", response_model=PatientDetail)
+async def get_patient_detail(patient_id: str):
+    # Convert the patient_id to ObjectId for MongoDB query
+    try:
+        object_id = ObjectId(patient_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid patient ID")
+
+    # Query the patient in the database by ID
+    patient = patient_collection.find_one({"_id": object_id})
+
     if patient:
-        # Check if the 'appointments' field exists, if not, initialize it as an empty list
-        appointments = patient.get('appointments', [])
-        # Append the new appointment to the patient's list of appointments
-        appointments.append(appointment.dict())
-        # Update the patient document in the database with the updated 'appointments' field
-        patient_collection.update_one({"_id": ObjectId(patient_id)}, {"$set": {"appointments": appointments}})
-        return Patient(**patient)
-    raise HTTPException(status_code=404, detail="Patient not found")
+        # If patient found, return its detail
+        return {
+            "id": str(patient['_id']),
+            "name": patient['name'],
+            "email": patient['email'],
+            "phone": patient['phone']
+        }
+    else:
+        # If patient not found, raise an HTTPException with 404 status code
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+class Appointment(BaseModel):
+    id: str
+    datetime: str
+    details: str
+
+# Endpoint to create appointments for a patient
+@app.post("/patients/{patient_id}/appointments/", response_model=Appointment)
+async def create_appointment(patient_id: str, appointment_data: Appointment):
+    try:
+        # Convert the patient_id to ObjectId for MongoDB query
+        object_id = ObjectId(patient_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid patient ID")
+    
+    # Query the patient in the database by ID to ensure the patient exists
+    patient = patient_collection.find_one({"_id": object_id})
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    # Generate an ID for the appointment
+    appointment_id = str(uuid4())
+    
+    # Create the appointment object with the generated ID
+    appointment = Appointment(id=appointment_id, **appointment_data.dict())
+    
+    # Add the appointment data to the patient's record
+    result = patient_collection.update_one(
+        {"_id": object_id},
+        {"$push": {"appointments": appointment.dict()}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=500, detail="Failed to create appointment")
+
+    # Return the created appointment data
+    return appointment
 
 class PaymentRequest(BaseModel):
     amount: float
