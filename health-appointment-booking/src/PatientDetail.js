@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import axios from 'axios'; // Import Axios library
 
 function PatientDetail() {
   const [patient, setPatient] = useState(null);
@@ -9,46 +10,37 @@ function PatientDetail() {
   const { id } = useParams(); // Extract id from URL parameters
 
   useEffect(() => {
-    console.log(id); // Check if id is defined
-    const fetchPatientData = async () => {
-      try {
-        const response = await fetch(`http://localhost:8000/patients/${id}/detail`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch patient details');
-        }
-        const data = await response.json();
-        setPatient(data);
-        setLoading(false);
-      } catch (error) {
-        setError(error.message);
-        setLoading(false);
-      }
-    };
-
-    const fetchAppointments = async () => {
-      try {
-        const response = await fetch(`http://localhost:8000/patients/${id}/appointments`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch appointments');
-        }
-        const data = await response.json();
-        setAppointments(data);
-      } catch (error) {
-        setError(error.message);
-      }
-    };
-
     if (id) {
-      fetchPatientData();
-      fetchAppointments(); // Call fetchAppointments here
-    }
-  }, [id]); // Ensure the useEffect runs when id changes
+      const fetchPatientData = async () => {
+        try {
+          const response = await axios.get(`http://localhost:8000/patients/${id}/detail`);
+          setPatient(response.data);
+          setLoading(false);
+        } catch (error) {
+          setError(error.message);
+          setLoading(false);
+        }
+      };
 
-  if (!patient) {
-    return <div>Patient not found.</div>;
+      const fetchAppointments = async () => {
+        try {
+          const response = await axios.get(`http://localhost:8000/patients/${id}/appointments`);
+          setAppointments(response.data);
+        } catch (error) {
+          setError(error.message);
+        }
+      };
+
+      fetchPatientData();
+      fetchAppointments();
+    }
+  }, [id]);
+
+  if (!id) {
+    return <div>No patient ID provided.</div>;
   }
 
-  if (loading) {
+  if (!patient) {
     return <div>Loading...</div>;
   }
 

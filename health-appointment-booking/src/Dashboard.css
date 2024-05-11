@@ -1,0 +1,99 @@
+/* Dashboard.css */
+
+.dashboard-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(249, 246, 246, 0.1);
+  /* Add background image */
+  background-image: url('https://img.freepik.com/free-vector/online-doctor-concept_23-2148521980.jpg?t=st=1715449634~exp=1715453234~hmac=afb12b261dd471e7fbe44ba35c2423d8bbf7e6008d3762222f40baab09ac61e7&w=740'); /* Replace 'your-background-image-url.jpg' with the URL of your image */
+  background-size: center; /* Cover the entire container */
+  background-position: center; /* Center the background image */
+}
+
+.dashboard-header {
+  background-color: rgba(248, 255, 245, 0.9); /* Transparent background color */
+  border-radius: 100px;
+  padding: 40px;
+  margin-bottom: 40px;
+}
+
+.dashboard-header-content {
+  background-color: rgba(235, 222, 222, 0.9);
+  padding: 30px;
+  border-radius: 100px;
+  text-align: center;
+  animation: slideDown 2s ease; /* Apply animation */
+}
+
+.dashboard-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #aa1919;
+  margin-bottom: 10px;
+}
+
+.dashboard-description {
+  font-size: 18px;
+  color: #7d7171;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.dashboard-section {
+  background-color: #fff;
+  border: 1px solid #f0e8e8;
+  border-radius: 8px;
+  padding: 30px;
+}
+
+.dashboard-section-content {
+  background-color: rgba(247, 247, 247, 0.9);
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.dashboard-section-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.dashboard-section-content p {
+  font-size: 16px;
+  color: #9e8989;
+}
+
+.dashboard-button {
+  display: inline-block;
+  background-color: #007bff;
+  color: #f0ebeb;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color 1s ease;
+}
+
+.dashboard-button:hover {
+  background-color: #0056b3;
+}
+
+/* Animation */
+@keyframes slideDown {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
