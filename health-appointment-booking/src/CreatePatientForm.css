@@ -5,7 +5,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif; /* Use appropriate font */
-  background-image: url('https://img.freepik.com/premium-vector/hand-drawn-hospital-reception-scene-with-people-wearing-medical-masks_23-2148833188.jpg?w=826');
+  background-image: url('https://img.freepik.com/premium-photo/high-angle-view-colored-pencils-table_1048944-1779546.jpg?w=1060');
   background-size: cover;
   background-position: center;
   height: 100vh;
@@ -31,15 +31,16 @@ body::after {
 
 /* Form container */
 .create-patient-form-container {
-  background-color: rgba(246, 239, 239, 0.5); /* Semi-transparent background */
-  padding: 20px;
+  background-color: #f6efef; /* White background */
+  padding: 0px;
   border-radius: 10px;
   box-shadow: 0 10px 4px rgba(0, 0, 0, 0.1);
+  max-width: 400px; /* Limit form width */
 }
 
 /* Form box */
 .form-box {
-  background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+  background-color: #f4ebf1; /* White background */
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -56,7 +57,7 @@ body::after {
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 label {
@@ -66,11 +67,11 @@ label {
 }
 
 input {
-  width: 70%;
-  padding: 12px;
+  width: calc(100% - 24px); /* Adjust input width */
+  padding: 10px; /* Reduce padding */
   border: 1px solid #282727;
   border-radius: 5px;
-  font-size: 16px;
+  font-size: 14px; /* Reduce font size */
   display: block;
   margin: 0 auto; /* Center the input horizontally */
 }
@@ -78,17 +79,32 @@ input {
 /* Porfsnail-inspired button styles */
 button {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   background-color: #ffffff; /* White background */
   color: #007bff; /* Blue text color */
-  border: 1px solid #007bff; /* Blue border */
-  border-radius: 30px; /* Large border-radius for rounded edges */
+  border: 1px solid #4f7fb3; /* Blue border */
+  border-radius: 130px; /* Large border-radius for rounded edges */
   cursor: pointer;
   font-size: 16px;
-  transition: background-color 0.3s, color 0.3s; /* Smooth transition on hover */
+  transition: background-color 0.1s, color 0.1s; /* Smooth transition on hover */
 }
 
 button:hover {
   background-color: #007bff; /* Blue background on hover */
   color: #ffffff; /* White text color on hover */
+}
+
+/* Responsive styles */
+@media only screen and (max-width: 600px) {
+  .create-patient-form-container {
+    width: 90%;
+  }
+
+  input {
+    width: 100%;
+  }
+
+  button {
+    width: 100%;
+  }
 }

@@ -1,10 +1,10 @@
-// App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Dashboard from './Dashboard';
 import CreatePatientForm from './CreatePatientForm';
 import PatientList from './PatientList';
 import PatientDetail from './PatientDetail';
+import AppointmentForm from './AppointmentForm';
 
 function App() {
   return (
@@ -15,8 +15,8 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/create-patient" element={<CreatePatientForm />} />
           <Route path="/patients" element={<PatientList />} />
-          <Route path="/patients/:id/detail" element={<PatientDetail />} />
-          
+          <Route path="/patients/:phone/detail" element={<PatientDetail />} />
+          <Route path="/patients/:phone/appointments" element={<AppointmentForm/>}/>
           {/* Route for listing patients */}
         </Routes>
       </div>

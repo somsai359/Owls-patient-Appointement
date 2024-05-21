@@ -47,7 +47,7 @@ function PatientList() {
       <div className="patient-cards-container">
         <div className="patient-cards">
           {filteredPatients.map(patient => (
-    <Link key={patient.id} to={`/patients/${patient.id}/detail`} className="patient-card">
+    <Link key={patient.phone} to={`/patients/${patient.phone}/detail`} className="patient-card">
     <div>
                 <p><strong>Name:</strong> {patient.name}</p>
                 <p><strong>Email:</strong> {patient.email}</p>

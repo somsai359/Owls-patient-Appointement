@@ -50,7 +50,7 @@ function CreatePatientForm() {
   return (
     <div className="create-patient-form-container">
       <div className="form-box">
-        <h2>Welcome to Hospital Appointment Booking</h2>
+        <h2>Owls Hospital Management </h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="name">Name:</label>

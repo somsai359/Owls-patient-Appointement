@@ -1,11 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 from bson import ObjectId
 from pydantic import BaseModel, Field
-from typing import List, Optional
-from uuid import uuid4
+from typing import List
 import stripe
+import requests
 
 stripe.api_key = "sk_test_51PEFQnSD3lsheG7Rz75tYsjQ5D1z9uANpnx3EOMMRohSG7xTBbGfJPtCpoEAJh02S7hz7nyOuSjk89ez3kDUSwIB00ArgZKkSe"
 
@@ -31,6 +31,16 @@ class Patient(BaseModel):
     email: str
     phone: str
 
+class Appointment(BaseModel):
+    datetime: str
+    details: str
+    amount: float
+    description: str
+
+class AppointmentResponse(BaseModel):
+    appointment: Appointment
+    payment_link: str
+
 # Create a new patient
 @app.post("/patients/", response_model=Patient)
 async def create_patient(patient: Patient):
@@ -48,7 +58,7 @@ async def create_patient(patient: Patient):
         return inserted_patient
     else:
         raise HTTPException(status_code=500, detail="Failed to create patient")
-
+    
 # Get all patients
 @app.get("/patients/", response_model=List[Patient])
 async def get_patients():
@@ -63,29 +73,20 @@ async def get_patients():
         patients.append(patient_obj)
     return patients
 
-# Define a response model for the patient detail
 class PatientDetail(BaseModel):
-    id: str
     name: str
     email: str
     phone: str
 
-# Endpoint to retrieve patient detail by ID
-@app.get("/patients/{patient_id}/detail", response_model=PatientDetail)
-async def get_patient_detail(patient_id: str):
-    # Convert the patient_id to ObjectId for MongoDB query
-    try:
-        object_id = ObjectId(patient_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid patient ID")
-
-    # Query the patient in the database by ID
-    patient = patient_collection.find_one({"_id": object_id})
+# Endpoint to retrieve patient detail by phone number
+@app.get("/patients/{phone}/detail", response_model=PatientDetail)
+async def get_patient_detail(phone: str):
+    # Query the patient in the database by phone number
+    patient = patient_collection.find_one({"phone": phone})
 
     if patient:
         # If patient found, return its detail
         return {
-            "id": str(patient['_id']),
             "name": patient['name'],
             "email": patient['email'],
             "phone": patient['phone']
@@ -93,56 +94,6 @@ async def get_patient_detail(patient_id: str):
     else:
         # If patient not found, raise an HTTPException with 404 status code
         raise HTTPException(status_code=404, detail="Patient not found")
-
-class Appointment(BaseModel):
-    id: str
-    datetime: str
-    details: str
-
-# Endpoint to create appointments for a patient
-@app.post("/patients/{patient_id}/appointments/", response_model=Appointment)
-async def create_appointment(patient_id: str, appointment_data: Appointment):
-    try:
-        # Convert the patient_id to ObjectId for MongoDB query
-        object_id = ObjectId(patient_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid patient ID")
-    
-    # Query the patient in the database by ID to ensure the patient exists
-    patient = patient_collection.find_one({"_id": object_id})
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
-    
-    # Generate an ID for the appointment
-    appointment_id = str(uuid4())
-    
-    # Create the appointment object with the generated ID
-    appointment = Appointment(id=appointment_id, **appointment_data.dict())
-    
-    # Add the appointment data to the patient's record
-    result = patient_collection.update_one(
-        {"_id": object_id},
-        {"$push": {"appointments": appointment.dict()}}
-    )
-    if result.modified_count == 0:
-        raise HTTPException(status_code=500, detail="Failed to create appointment")
-
-    # Return the created appointment data
-    return appointment
-
-class PaymentRequest(BaseModel):
-    amount: float
-    description: str
-
-# Define an endpoint to test the generate_payment_link function
-@app.post("/test/payment-link/", response_model=str)
-async def test_generate_payment_link(payment_request: PaymentRequest):
-    try:
-        # Call the generate_payment_link function with the provided data
-        client_secret = generate_payment_link(payment_request.amount, payment_request.description)
-        return client_secret
-    except HTTPException as e:
-        return e.detail
 
 # Function to generate payment link using Stripe API
 def generate_payment_link(amount: float, description: str) -> str:
@@ -157,21 +108,35 @@ def generate_payment_link(amount: float, description: str) -> str:
     except Exception as e:
         raise HTTPException(status_code=500, detail="Failed to generate payment link")
 
+# Modify the endpoint to return both appointment data and payment link
+@app.post("/patients/{patient_phone}/appointments/", response_model=AppointmentResponse)
+async def create_appointment(patient_phone: str, amount: float = Form(...), description: str = Form(...)):
+    try:
+        # Query the patient in the database by phone number
+        patient = patient_collection.find_one({"phone": patient_phone})
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        
+        # You can use the amount and description provided from the form directly
+        appointment = Appointment(
+            amount=amount,
+            description=description
+        )
 
-# Delete a patient by ID
-@app.delete("/patients/{patient_id}")
-async def delete_patient(patient_id: str):
-    result = patient_collection.delete_one({"_id": ObjectId(patient_id)})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Patient not found")
-    return {"message": "Patient deleted successfully"}
+        # Append the appointment to the patient's appointments list
+        appointment_dict = appointment.dict()
+        appointment_id = appointment_dict.pop('_id', None)
+        appointment_dict['_id'] = appointment_id if appointment_id else str(ObjectId())
+        patient_collection.update_one(
+            {"phone": patient_phone},
+            {"$push": {"appointments": appointment_dict}}
+        )
 
-# Update a patient by ID
-@app.put("/patients/{patient_id}", response_model=Patient)
-async def update_patient(patient_id: str, patient: Patient):
-    patient_dict = patient.dict()
-    result = patient_collection.update_one({"_id": ObjectId(patient_id)}, {"$set": patient_dict})
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Patient not found")
-    patient.id = patient_id
-    return patient
+        # Generate the payment link using Stripe API
+        payment_link = generate_payment_link(appointment.amount, appointment.description)
+
+        # Return the appointment data and payment link
+        return AppointmentResponse(appointment=appointment, payment_link=payment_link)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid phone number format")
+
